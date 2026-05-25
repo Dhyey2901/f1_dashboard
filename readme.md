@@ -1,111 +1,124 @@
-# 🏎️ F1 Starting Position Analysis Dashboard
+# F1 Starting Grid Analysis Dashboard
 
-An interactive data analytics dashboard built using **R Shiny** to analyse how starting grid position impacts race outcomes in Formula 1.
+An interactive analytical dashboard built with **R Shiny** examining the relationship between qualifying grid position and race outcome across 70+ years of Formula 1 (1950–2023).
 
-This project explores historical F1 data (1950–2023) to uncover insights into race performance, pole position advantage, and remarkable comeback drives.
-
----
-
-## 📊 Project Overview
-
-This dashboard answers key questions such as:
-
-- Does starting from pole position guarantee a win?
-- How has the pole position advantage changed across eras?
-- Can drivers recover from poor starting positions?
-- What are the greatest comeback performances in F1 history?
+Submitted as part of **Data Visualisation — Assignment 3**, RMIT University.
 
 ---
 
-## 🚀 Features
+## Overview
 
-- 📈 **Pole Position Analysis**  
-  Visualises win rates from pole position across different eras of Formula 1.
-
-- 📉 **Grid vs Finish Analysis**  
-  Interactive scatter plots comparing starting position vs finishing position.
-
-- 🏆 **Comeback Drive Analysis**  
-  Highlights the most impressive position gains in race history.
-
-- 🎛️ **Interactive Dashboard**  
-  Dynamic filters for era selection, time periods, and teams.
+This dashboard investigates whether starting grid position is a reliable predictor of race outcome in Formula 1, and how that predictive relationship has evolved across different competitive eras. Using a comprehensive dataset of 73 seasons, the analysis spans pole position conversion rates, position-change patterns, circuit-level variance, constructor and driver performance, and formal statistical correlation modelling.
 
 ---
 
-## 🛠️ Tech Stack
+## Research Questions
 
-- **R**
-- **Shiny / shinydashboard**
-- **ggplot2**
-- **Plotly**
-- **dplyr**
-- **DT**
-- **janitor**
+1. Does starting from pole position reliably predict a race win, and has this changed over time?
+2. How does grid position correlate with final race classification across different eras?
+3. Which circuits, constructors, and drivers show the greatest and least dependence on qualifying position?
+4. What does a formal regression analysis reveal about the predictive power of grid position?
 
 ---
 
+## Dashboard Modules
 
-
-## 📊 Dataset
-
-- Source: Kaggle – Formula 1 World Championship Dataset  
-- Covers races from **1950 to 2023**
+| Tab | Description |
+| --- | ----------- |
+| **Pole Position Analysis** | Season-by-season pole-to-win conversion rate, filterable by era, with summary statistics and an era breakdown table |
+| **Grid vs Finish Position** | Scatter plot of every race entry (grid → finish), filterable by decade, with podium highlighting |
+| **Greatest Comebacks** | Top position-gain drives ranked by net positions recovered, filterable by era and constructor |
+| **Constructor Analysis** | Pole count and conversion rate rankings across all constructors; full statistics table |
+| **Circuit Breakdown** | Pole win rate per circuit, ranked and colour-coded; adjustable minimum race threshold |
+| **Driver Leaderboard** | Driver-level pole count, win conversion, and a poles vs wins scatter revealing qualification efficiency |
+| **Statistical Analysis** | Pearson correlation, R², mean absolute position change, and OLS regression lines stratified by competitive era |
 
 ---
 
-## ▶️ How to Run the Project
+## Tech Stack
+
+| Package | Purpose |
+| ------- | ------- |
+| `shiny` | Web application framework |
+| `shinydashboard` | Dashboard layout and components |
+| `ggplot2` | Static chart rendering |
+| `plotly` | Interactive chart rendering |
+| `dplyr` | Data manipulation |
+| `readr` | CSV ingestion |
+| `janitor` | Column name normalisation |
+| `DT` | Interactive data tables |
+
+---
+
+## Dataset
+
+**Source:** Rao, R. (2024). *Formula 1 World Championship Dataset (1950–2023)*. Kaggle.  
+[https://www.kaggle.com/datasets/rohanrao/formula-1-world-championship-1950-2020](https://www.kaggle.com/datasets/rohanrao/formula-1-world-championship-1950-2020)
+
+**Files used:**
+
+```text
+data/
+├── qualifying.csv       # Qualifying session results (grid positions)
+├── results.csv          # Race finish positions and status
+├── races.csv            # Race metadata (year, circuit, name)
+├── drivers.csv          # Driver names and identifiers
+└── constructors.csv     # Constructor names and identifiers
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- R ≥ 4.1
+- RStudio (recommended)
+
+### Installation
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/Dhyey2901/f1-starting-position-analysis.git
-2. Open app.R in RStudio
-3. Install required packages:
 
-install.packages(c("shiny", "shinydashboard", "plotly", "dplyr", "readr", "janitor", "ggplot2", "DT"))
+```bash
+git clone https://github.com/Dhyey2901/f1_dashboard.git
+cd f1_dashboard
+```
 
-4. Run the app:
-shiny::runApp()
+1. Install required packages:
 
-💡 Key Insights
+```r
+install.packages(c(
+  "shiny", "shinydashboard", "plotly",
+  "dplyr", "readr", "janitor", "ggplot2", "DT"
+))
+```
 
-Pole position does not always guarantee victory
+1. Ensure the `data/` directory contains the five CSV files listed above.
 
-The advantage of starting first has decreased in modern F1
+### Running the App
 
-Significant position gains are possible due to race strategy and conditions
+```r
+shiny::runApp("app.R")
+```
 
-Performance trends vary significantly across racing eras
+Or open `app.R` in RStudio and click **Run App**.
 
-👤 Author
+---
 
-Dhyey U Vyas
-📧 dhyeyvyas2003@gmail.com
+## Key Findings
 
-[🔗 LinkedIn](https://www.linkedin.com/in/dhyeyuvyas/)
+- Pole position leads to victory in approximately **40% of races** across all seasons, but this varies significantly by era.
+- The Turbo Era (1971–1990) shows the highest pole-to-win conversion rates; the Hybrid Era (2011+) the lowest, indicating increased mid-race competitiveness.
+- Pearson correlation between grid position and finishing position is moderate-to-strong (r ≈ 0.5–0.6), confirming qualifying as a meaningful but imperfect predictor.
+- Street circuits (e.g., Monaco) consistently show pole win rates above 60%, while high-degradation circuits show much lower rates.
+- A small number of drivers and constructors convert poles at well above the dataset average, suggesting systematic performance advantages beyond raw qualifying pace.
 
-[💻 GitHub](https://github.com/Dhyey2901)
+---
 
-🎯 Resume Value
+## Author
 
-This project demonstrates:
+**Dhyey U Vyas**  
+Student ID: S4097968  
+RMIT University — Bachelor of Information Technology  
 
-End-to-end data analytics workflow
-
-Data cleaning and feature engineering
-
-Interactive dashboard development
-
-Storytelling with data
-
-Real-world dataset handling
-
-📌 Future Improvements
-
-Deploy dashboard using ShinyApps.io
-
-Add predictive modelling for race outcomes
-
-Enhance UI/UX design
-
-Include driver/team performance comparisons
+[LinkedIn](https://www.linkedin.com/in/dhyeyuvyas/) · [GitHub](https://github.com/Dhyey2901)
