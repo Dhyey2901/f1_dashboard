@@ -91,173 +91,502 @@ tryCatch({
 
 # UI
 ui <- dashboardPage(
-  dashboardHeader(title = "F1 Starting Position Analysis"),
+  skin = "black",
+
+  dashboardHeader(
+    title = "F1 Grid Analysis",
+    titleWidth = 250
+  ),
 
   dashboardSidebar(
+    width = 240,
     sidebarMenu(
-      menuItem("Pole Position Analysis", tabName = "pole_tab", icon = icon("flag-checkered")),
-      menuItem("Grid vs Finish", tabName = "scatter_tab", icon = icon("chart-line")),
-      menuItem("Best Comebacks", tabName = "comeback_tab", icon = icon("trophy"))
+      id = "tabs",
+      menuItem("Pole Position Analysis",   tabName = "pole_tab",     icon = icon("flag-checkered")),
+      menuItem("Grid vs Finish Position",  tabName = "scatter_tab",  icon = icon("chart-line")),
+      menuItem("Greatest Comebacks",       tabName = "comeback_tab",     icon = icon("trophy")),
+      menuItem("Constructor Analysis",     tabName = "constructor_tab",  icon = icon("industry")),
+      menuItem("Circuit Breakdown",        tabName = "circuit_tab",      icon = icon("road")),
+      menuItem("Driver Leaderboard",       tabName = "driver_tab",       icon = icon("user")),
+      menuItem("Statistical Analysis",     tabName = "stats_tab",        icon = icon("calculator"))
     )
   ),
 
   dashboardBody(
     tags$head(
+      tags$link(rel = "preconnect", href = "https://fonts.googleapis.com"),
+      tags$link(rel = "stylesheet",
+        href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"),
       tags$style(HTML("
-        .content-wrapper { background-color: #f4f4f4; }
-        .box { margin-bottom: 20px; }
-        h4 { color: #333; margin-top: 0; }
+        /* ─── Base ─── */
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important; }
+        body, .wrapper           { background: #111827 !important; }
+        .content-wrapper         { background: #111827 !important; }
+
+        /* ─── Header & sidebar ─── */
+        .main-sidebar, .left-side { background: #0d1117 !important; }
+        .skin-black .main-header .navbar,
+        .skin-black .main-header .logo {
+          background: #0d1117 !important;
+          border-bottom: 1px solid #1f2937 !important;
+        }
+        .skin-black .main-header .logo {
+          border-right: 1px solid #1f2937 !important;
+          color: #f9fafb !important;
+          font-weight: 600 !important;
+        }
+        .skin-black .sidebar a {
+          color: #9ca3af !important;
+          font-size: 13px !important;
+          font-weight: 400 !important;
+          padding: 10px 20px !important;
+        }
+        .skin-black .main-sidebar .sidebar .sidebar-menu > li.active > a {
+          background: rgba(220,38,38,0.1) !important;
+          border-left: 2px solid #dc2626 !important;
+          color: #f9fafb !important;
+          font-weight: 500 !important;
+        }
+        .skin-black .main-sidebar .sidebar .sidebar-menu > li:hover > a {
+          background: rgba(255,255,255,0.04) !important;
+          color: #e5e7eb !important;
+        }
+
+        /* ─── Cards ─── */
+        .box {
+          background: #1f2937 !important;
+          border: 1px solid #374151 !important;
+          border-radius: 6px !important;
+          box-shadow: none !important;
+          margin-bottom: 20px;
+        }
+        .box-header {
+          background: transparent !important;
+          border-bottom: 1px solid #374151 !important;
+          padding: 13px 18px !important;
+        }
+        /* Uniform header accent — no multicolor status bars */
+        .box.box-primary > .box-header,
+        .box.box-success  > .box-header,
+        .box.box-info     > .box-header,
+        .box.box-warning  > .box-header,
+        .box.box-danger   > .box-header {
+          background: transparent !important;
+          border-left: 3px solid #dc2626 !important;
+        }
+        .box-title {
+          color: #e5e7eb !important;
+          font-size: 11px !important;
+          font-weight: 600 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.7px !important;
+        }
+        .box-body { color: #9ca3af !important; padding: 18px !important; }
+
+        /* ─── Value boxes ─── */
+        .small-box {
+          border-radius: 6px !important;
+          border: 1px solid #374151 !important;
+          box-shadow: none !important;
+        }
+        .small-box h3 { font-size: 26px !important; font-weight: 700 !important; color: #f9fafb !important; }
+        .small-box p  { font-size: 11px !important; font-weight: 500 !important;
+                        text-transform: uppercase !important; letter-spacing: 0.5px !important; }
+        .small-box .icon { opacity: 0.1 !important; }
+
+        /* ─── Inputs ─── */
+        .selectize-input, .form-control {
+          background: #111827 !important;
+          color: #e5e7eb !important;
+          border: 1px solid #374151 !important;
+          border-radius: 5px !important;
+          font-size: 13px !important;
+          box-shadow: none !important;
+          padding: 7px 11px !important;
+        }
+        .selectize-input.focus, .form-control:focus {
+          border-color: #dc2626 !important;
+          box-shadow: 0 0 0 2px rgba(220,38,38,0.12) !important;
+          outline: none !important;
+        }
+        .selectize-dropdown {
+          background: #1f2937 !important;
+          color: #e5e7eb !important;
+          border: 1px solid #374151 !important;
+          border-radius: 5px !important;
+          font-size: 13px !important;
+        }
+        .selectize-dropdown .option:hover,
+        .selectize-dropdown .option.active { background: #374151 !important; }
+        label {
+          color: #6b7280 !important;
+          font-size: 11px !important;
+          font-weight: 500 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.5px !important;
+          margin-bottom: 5px !important;
+          display: block !important;
+        }
+
+        /* ─── DataTables ─── */
+        table.dataTable thead th {
+          background: #111827 !important;
+          color: #6b7280 !important;
+          font-size: 10px !important;
+          font-weight: 600 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.8px !important;
+          border-bottom: 1px solid #374151 !important;
+          padding: 10px 14px !important;
+        }
+        table.dataTable tbody tr { background: #1f2937 !important; color: #d1d5db !important; font-size: 13px !important; }
+        table.dataTable tbody tr:hover { background: #263548 !important; }
+        table.dataTable tbody td { border-top: 1px solid #2d3748 !important; padding: 10px 14px !important; }
+        .dataTables_wrapper, .dataTables_wrapper .dataTables_info { color: #6b7280 !important; font-size: 12px !important; }
+
+        /* ─── Static table (quick_stats) ─── */
+        .table { color: #d1d5db !important; font-size: 13px !important; }
+        .table > thead > tr > th {
+          border-bottom: 1px solid #374151 !important;
+          color: #6b7280 !important; font-size: 10px !important;
+          text-transform: uppercase !important; letter-spacing: 0.5px !important;
+          font-weight: 600 !important; padding: 8px 10px !important;
+        }
+        .table > tbody > tr > td { border-top: 1px solid #2d3748 !important; padding: 8px 10px !important; }
+        .table-bordered { border: 1px solid #374151 !important; }
+
+        /* ─── Verbatim output ─── */
+        pre.shiny-text-output {
+          background: #111827 !important;
+          color: #d1d5db !important;
+          border: 1px solid #374151 !important;
+          border-radius: 5px !important;
+          font-size: 12px !important;
+          line-height: 1.75 !important;
+          padding: 14px !important;
+        }
+
+        /* ─── Typography ─── */
+        p    { color: #9ca3af !important; font-size: 13px !important; line-height: 1.7 !important; margin-bottom: 5px !important; }
+        h4   { color: #e5e7eb !important; font-weight: 600 !important; font-size: 11px !important;
+               text-transform: uppercase !important; letter-spacing: 0.6px !important;
+               margin: 0 0 12px 0 !important; padding-bottom: 8px !important;
+               border-bottom: 1px solid #374151 !important; }
+        em   { color: #6b7280 !important; }
+        strong { color: #e5e7eb !important; }
+        a    { color: #dc2626 !important; text-decoration: none !important; }
+        a:hover { text-decoration: underline !important; }
+
+        /* ─── Stat rows ─── */
+        .stat-row {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 8px 0; border-bottom: 1px solid #2d3748;
+          font-size: 12px; color: #9ca3af;
+        }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-val { color: #f9fafb; font-weight: 600; font-size: 13px; }
+
+        /* ─── Insight items ─── */
+        .ins-item {
+          padding: 7px 0; border-bottom: 1px solid #2d3748;
+          font-size: 12px; color: #9ca3af; line-height: 1.5;
+        }
+        .ins-item:last-child { border-bottom: none; }
+
+        /* ─── Footer ─── */
+        .footer-strip {
+          padding: 12px 20px; border-top: 1px solid #1f2937;
+          color: #4b5563; font-size: 11px;
+          display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;
+        }
+        .footer-strip a { color: #6b7280 !important; }
+        .footer-strip a:hover { color: #dc2626 !important; }
+
+        /* ─── Scrollbar ─── */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
       "))
     ),
 
     tabItems(
+
+      # ── Tab 1: Pole Analysis ─────────────────────────────────────────────
       tabItem(
         tabName = "pole_tab",
+
+        fluidRow(
+          valueBoxOutput("vbox_total_poles",   width = 4),
+          valueBoxOutput("vbox_pole_wins",     width = 4),
+          valueBoxOutput("vbox_pole_win_rate", width = 4)
+        ),
+
         fluidRow(
           box(
-            title = "Does Pole Position Really Matter in F1?",
-            status = "primary",
-            solidHeader = TRUE,
-            width = 12,
-            p("This dashboard explores whether starting from pole position (P1) actually leads to race wins in Formula 1."),
-            p("Using F1 data from 1950–2023, this analysis shows how the pole position advantage has changed across different eras of the sport.")
+            title = "Research Question", status = "primary", solidHeader = TRUE, width = 12,
+            p("Does qualifying pace predict race outcome? This analysis examines the pole-to-win conversion rate across all Formula 1 seasons from 1950 to 2023, segmented by competitive era."),
+            p("A declining conversion rate over time would suggest increased mid-race competitiveness, strategy variance, and reduced aerodynamic advantage for leading cars.")
           )
         ),
+
         fluidRow(
           box(
-            title = "Pole Position Win Rate Over Time",
-            status = "primary",
-            solidHeader = TRUE,
-            width = 8,
-            selectInput(
-              "era_select", "Choose Era:",
+            title = "Pole-to-Win Conversion Rate by Season",
+            status = "primary", solidHeader = TRUE, width = 8,
+            selectInput("era_select", "Era Filter:",
               choices = c("All Eras", sort(unique(f1_data$f1_era))),
-              selected = "All Eras"
-            ),
-            plotlyOutput("pole_chart", height = "350px")
+              selected = "All Eras", width = "50%"),
+            plotlyOutput("pole_chart", height = "310px")
           ),
           box(
-            title = "Key Statistics",
-            status = "info",
-            solidHeader = TRUE,
-            width = 4,
-            h4("Pole Position Facts:"),
-            p("• Overall, pole sitters win about 40% of races"),
-            p("• This varies significantly between different F1 eras"),
-            p("• Modern F1 shows declining pole advantage due to closer competition"),
+            title = "Dataset Summary", status = "info", solidHeader = TRUE, width = 4,
+            tags$div(class = "stat-row",
+              tags$span("Seasons covered"),
+              tags$span(class = "stat-val", paste0(min(f1_data$year), "–", max(f1_data$year)))
+            ),
+            tags$div(class = "stat-row",
+              tags$span("Race entries"),
+              tags$span(class = "stat-val", format(nrow(f1_data), big.mark = ","))
+            ),
+            tags$div(class = "stat-row",
+              tags$span("Drivers"),
+              tags$span(class = "stat-val", length(unique(f1_data$driver_full_name)))
+            ),
+            tags$div(class = "stat-row",
+              tags$span("Constructors"),
+              tags$span(class = "stat-val", length(unique(f1_data$team)))
+            ),
             br(),
-            p(strong("Fun fact:"), "Some drivers are much better at converting pole positions into wins than others."),
-            br(),
+            h4("Pole Conversion"),
             tableOutput("quick_stats")
           )
         ),
+
         fluidRow(
           box(
-            title = "Win Rates by Era",
-            status = "success",
-            solidHeader = TRUE,
-            width = 12,
+            title = "Pole-to-Win Rate by Competitive Era",
+            status = "success", solidHeader = TRUE, width = 12,
             DT::dataTableOutput("era_table")
           )
         )
       ),
 
+      # ── Tab 2: Scatter ───────────────────────────────────────────────────
       tabItem(
         tabName = "scatter_tab",
         fluidRow(
           box(
-            title = "Starting Grid Position vs Final Result",
-            status = "primary",
-            solidHeader = TRUE,
-            width = 9,
-            p("Each point represents one driver's performance in a race. Points below the diagonal line show position gains."),
-            selectInput(
-              "year_filter", "Select Time Period:",
+            title = "Grid vs. Race Finish Position",
+            status = "primary", solidHeader = TRUE, width = 9,
+            p("Each point is one race entry. Points below the diagonal line gained positions from grid to finish; points above lost ground. A strong diagonal cluster indicates that qualifying position is a reliable predictor of race outcome."),
+            selectInput("year_filter", "Time Period:",
               choices = list(
-                "All Years (1950-2023)" = "all",
-                "Recent (2020-2023)" = "recent",
-                "2010s" = "2010s",
-                "2000s" = "2000s",
-                "1990s" = "1990s",
-                "Before 1990" = "early"
-              )
-            ),
-            plotlyOutput("position_scatter", height = "400px")
+                "All Seasons (1950–2023)" = "all",
+                "2020–2023"               = "recent",
+                "2010–2019"               = "2010s",
+                "2000–2009"               = "2000s",
+                "1990–1999"               = "1990s",
+                "Pre-1990"                = "early"
+              ), width = "45%"),
+            plotlyOutput("position_scatter", height = "420px")
           ),
           box(
-            title = "What This Shows",
-            status = "warning",
-            solidHeader = TRUE,
-            width = 3,
-            h4("Reading the Chart:"),
-            p("• Front row (P1-P2) gives the best chance of winning"),
-            p("• Points below the diagonal = positions gained"),
-            p("• Points above the diagonal = positions lost"),
-            p("• Orange dots = podium finishes"),
+            title = "Chart Guide", status = "warning", solidHeader = TRUE, width = 3,
+            h4("Legend"),
+            tags$div(class = "ins-item",
+              tags$span(style = "display:inline-block;width:9px;height:9px;border-radius:50%;background:#fbbf24;margin-right:8px;vertical-align:middle;"),
+              "Podium finish (P1–P3)"),
+            tags$div(class = "ins-item",
+              tags$span(style = "display:inline-block;width:9px;height:9px;border-radius:50%;background:#4b5563;margin-right:8px;vertical-align:middle;"),
+              "Outside podium"),
+            tags$div(class = "ins-item", "— — Dashed line = no net change"),
             br(),
-            p(strong("Insight:"), "Starting in the top 10 gives the best shot at points, but remarkable drives can come from anywhere on the grid.")
+            h4("Key Findings"),
+            tags$div(class = "ins-item", "Front-row starters show highest podium probability"),
+            tags$div(class = "ins-item", "Variance increases significantly from P8 onwards"),
+            tags$div(class = "ins-item", "Outliers reflect safety cars, strategy, and weather")
           )
         )
       ),
 
+      # ── Tab 3: Comebacks ─────────────────────────────────────────────────
       tabItem(
         tabName = "comeback_tab",
         fluidRow(
           box(
-            title = "Most Impressive Comeback Drives",
-            status = "success",
-            solidHeader = TRUE,
-            width = 8,
-            p("These are the drives where drivers gained the most positions from start to finish."),
-            selectInput(
-              "comeback_type", "Show:",
+            title = "Greatest Position-Gain Drives",
+            status = "success", solidHeader = TRUE, width = 8,
+            p("Ranked by net positions gained from qualifying grid slot to race classification. These represent the most statistically improbable recoveries in the 1950–2023 dataset."),
+            selectInput("comeback_type", "Filter:",
               choices = list(
-                "All Time Greatest" = "all_time",
-                "Last 10 Years" = "recent_years",
-                "Specific Team" = "by_team"
-              )
-            ),
+                "All-Time (1950–2023)"    = "all_time",
+                "Last Decade (2014–2023)" = "recent_years",
+                "By Constructor"          = "by_team"
+              ), width = "55%"),
             conditionalPanel(
               condition = "input.comeback_type == 'by_team'",
-              selectInput("team_select", "Choose Team:", choices = NULL)
+              selectInput("team_select", "Constructor:", choices = NULL, width = "55%")
             ),
-            plotOutput("comeback_plot", height = "350px")
+            plotOutput("comeback_plot", height = "400px")
           ),
           box(
-            title = "Amazing Recovery",
-            status = "info",
-            solidHeader = TRUE,
-            width = 4,
-            h4("Featured Comeback:"),
+            title = "Top Recovery", status = "info", solidHeader = TRUE, width = 4,
+            h4("Featured Drive"),
             verbatimTextOutput("featured_comeback"),
             br(),
-            h4("What Makes Great Comebacks?"),
-            p("• Rain and changing conditions"),
-            p("• Smart pit stop strategy"),
-            p("• Safety car timing"),
-            p("• Pure driving skill"),
-            p("• Reliability when others fail"),
+            h4("Enabling Factors"),
+            tags$div(class = "ins-item", "Wet or changing track conditions"),
+            tags$div(class = "ins-item", "Undercut pit-stop strategy"),
+            tags$div(class = "ins-item", "Safety car deployment timing"),
+            tags$div(class = "ins-item", "Competitor retirements / penalties"),
+            tags$div(class = "ins-item", "Superior tyre management")
+          )
+        )
+      ),
+
+      # ── Tab 4: Constructor Analysis ────────────────────────────────────────
+      tabItem(
+        tabName = "constructor_tab",
+        fluidRow(
+          valueBoxOutput("vbox_top_constructor",   width = 4),
+          valueBoxOutput("vbox_best_team_rate",    width = 4),
+          valueBoxOutput("vbox_constructor_count", width = 4)
+        ),
+        fluidRow(
+          box(
+            title = "Top 15 Constructors by Pole Positions",
+            status = "primary", solidHeader = TRUE, width = 7,
+            plotlyOutput("constructor_poles_chart", height = "360px")
+          ),
+          box(
+            title = "Best Pole Conversion Rate (min. 10 poles)",
+            status = "info", solidHeader = TRUE, width = 5,
+            plotlyOutput("constructor_rate_chart", height = "360px")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "All Constructor Pole Statistics",
+            status = "success", solidHeader = TRUE, width = 12,
+            DT::dataTableOutput("constructor_table")
+          )
+        )
+      ),
+
+      # ── Tab 5: Circuit Breakdown ────────────────────────────────────────────
+      tabItem(
+        tabName = "circuit_tab",
+        fluidRow(
+          valueBoxOutput("vbox_best_circuit",  width = 4),
+          valueBoxOutput("vbox_worst_circuit", width = 4),
+          valueBoxOutput("vbox_circuit_count", width = 4)
+        ),
+        fluidRow(
+          box(
+            title = "Research Question", status = "primary", solidHeader = TRUE, width = 12,
+            p("Do circuit characteristics affect how much pole position matters? Street circuits and low-overtaking venues are hypothesised to show significantly higher pole-to-win conversion rates than high-speed or high-degradation circuits where alternative strategies and overtaking are more feasible.")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Pole-to-Win Rate by Circuit",
+            status = "primary", solidHeader = TRUE, width = 9,
+            sliderInput("circuit_min_races", "Minimum races held at circuit:",
+              min = 5, max = 30, value = 10, step = 5, width = "55%"),
+            plotlyOutput("circuit_chart", height = "450px")
+          ),
+          box(
+            title = "Interpretation", status = "warning", solidHeader = TRUE, width = 3,
+            h4("What This Shows"),
+            tags$div(class = "ins-item", "Street circuits (Monaco, Baku) restrict overtaking"),
+            tags$div(class = "ins-item", "High-downforce circuits favour qualifying pace"),
+            tags$div(class = "ins-item", "Low-downforce power circuits allow strategic variation"),
+            tags$div(class = "ins-item", "Tyre degradation circuits increase mid-race strategy impact"),
             br(),
-            em("These drives show why Formula 1 is so unpredictable on race day.")
+            h4("Reading the Chart"),
+            p("Circuits sorted by pole win rate. A higher value means grid position is more deterministic of race outcome — offering fewer opportunities for mid-race position changes.")
+          )
+        )
+      ),
+
+      # ── Tab 6: Driver Leaderboard ───────────────────────────────────────────
+      tabItem(
+        tabName = "driver_tab",
+        fluidRow(
+          valueBoxOutput("vbox_most_poles_driver", width = 4),
+          valueBoxOutput("vbox_most_pw_driver",    width = 4),
+          valueBoxOutput("vbox_best_driver_rate",  width = 4)
+        ),
+        fluidRow(
+          box(
+            title = "Poles vs. Wins from Pole by Driver (min. 5 poles)",
+            status = "primary", solidHeader = TRUE, width = 8,
+            p("Each point is one driver. The dashed diagonal represents a 1:1 conversion rate — every pole resulting in a win. Points above the line exceed average conversion efficiency."),
+            plotlyOutput("driver_scatter", height = "370px")
+          ),
+          box(
+            title = "How to Read", status = "warning", solidHeader = TRUE, width = 4,
+            h4("Legend"),
+            tags$div(class = "ins-item", "X-axis = total pole positions"),
+            tags$div(class = "ins-item", "Y-axis = wins starting from pole"),
+            tags$div(class = "ins-item", "— Diagonal = 100% conversion reference"),
+            tags$div(class = "ins-item", "Above line = above-average converters"),
+            br(),
+            h4("Key Insight"),
+            p("Separates great qualifiers from great racers. Drivers below the diagonal qualify well but struggle to convert. Drivers above the line are exceptionally efficient at winning from pole.")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Driver Pole Statistics (min. 3 poles)",
+            status = "success", solidHeader = TRUE, width = 12,
+            DT::dataTableOutput("driver_table")
+          )
+        )
+      ),
+
+      # ── Tab 7: Statistical Analysis ─────────────────────────────────────────
+      tabItem(
+        tabName = "stats_tab",
+        fluidRow(
+          valueBoxOutput("vbox_correlation",    width = 4),
+          valueBoxOutput("vbox_r_squared",      width = 4),
+          valueBoxOutput("vbox_mean_abs_error", width = 4)
+        ),
+        fluidRow(
+          box(
+            title = "Research Context", status = "primary", solidHeader = TRUE, width = 12,
+            p("Pearson's r between grid position and race finish position quantifies the linear relationship between qualifying and race performance. A coefficient of r = 1 would indicate the qualifying order is perfectly preserved. The analysis is stratified by competitive era to test whether the predictive power of qualifying has changed across different regulatory regimes.")
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Grid vs. Finish — OLS Regression by Competitive Era",
+            status = "primary", solidHeader = TRUE, width = 8,
+            plotlyOutput("stats_regression_chart", height = "370px")
+          ),
+          box(
+            title = "Correlation Coefficients by Era",
+            status = "info", solidHeader = TRUE, width = 4,
+            DT::dataTableOutput("era_correlation_table"),
+            br(),
+            p(tags$strong("Note:"), " Higher r indicates grid position more strongly predicts race outcome. All values are expected to be statistically significant given the sample sizes involved.")
           )
         )
       )
     ),
 
-    fluidRow(
-      box(
-        width = 12,
-        p(
-          strong("Data Source:"),
-          "Rao, R. (2024). Formula 1 World Championship Dataset (1950–2023). Kaggle. ",
-          a(
-            "Dataset link",
-            href = "https://www.kaggle.com/datasets/rohanrao/formula-1-world-championship-1950-2020",
-            target = "_blank"
-          )
-        ),
-        p(em("Created for Data Visualisation Assignment 3"))
-      )
+    # ── Footer ───────────────────────────────────────────────────────────────
+    tags$div(
+      class = "footer-strip",
+      tags$span(
+        tags$strong(style = "color:#6b7280;", "Source: "),
+        "Rao, R. (2024). Formula 1 World Championship Dataset (1950–2023). Kaggle. ",
+        tags$a("View dataset",
+          href = "https://www.kaggle.com/datasets/rohanrao/formula-1-world-championship-1950-2020",
+          target = "_blank")
+      ),
+      tags$span("Data Visualisation — Assignment 3 | RMIT University")
     )
   )
 )
@@ -269,6 +598,25 @@ server <- function(input, output, session) {
     req(f1_data)
     team_options <- sort(unique(f1_data$team))
     updateSelectInput(session, "team_select", choices = team_options)
+  })
+
+  output$vbox_total_poles <- renderValueBox({
+    total <- sum(f1_data$started_pole, na.rm = TRUE)
+    valueBox(value = format(total, big.mark = ","), subtitle = "Total Pole Positions (1950–2023)",
+             icon = icon("flag"), color = "red")
+  })
+
+  output$vbox_pole_wins <- renderValueBox({
+    wins <- sum(f1_data$won_from_pole, na.rm = TRUE)
+    valueBox(value = format(wins, big.mark = ","), subtitle = "Races Won From Pole",
+             icon = icon("trophy"), color = "yellow")
+  })
+
+  output$vbox_pole_win_rate <- renderValueBox({
+    rate <- round((sum(f1_data$won_from_pole, na.rm = TRUE) /
+                   sum(f1_data$started_pole, na.rm = TRUE)) * 100, 1)
+    valueBox(value = paste0(rate, "%"), subtitle = "All-Time Pole-to-Win Rate",
+             icon = icon("percent"), color = "green")
   })
 
   output$pole_chart <- renderPlotly({
@@ -299,17 +647,23 @@ server <- function(input, output, session) {
     }
 
     p <- ggplot(yearly_stats, aes(x = year, y = win_percentage)) +
-      geom_col(fill = "#e74c3c", alpha = 0.7) +
-      geom_smooth(se = FALSE, color = "#2c3e50", method = "loess") +
-      labs(
-        x = "Year",
-        y = "Win Rate (%)",
-        title = "How Often Does Pole Position Lead to Victory?"
-      ) +
-      theme_minimal() +
-      ylim(0, 100)
+      geom_col(fill = "#e10600", alpha = 0.85) +
+      geom_smooth(se = FALSE, color = "#9ca3af", method = "loess", linewidth = 1) +
+      labs(x = "Year", y = "Win Rate (%)", title = NULL) +
+      scale_y_continuous(limits = c(0, 100), labels = function(x) paste0(x, "%")) +
+      theme_minimal(base_size = 13) +
+      theme(
+        plot.background    = element_rect(fill = "#1f2937", color = NA),
+        panel.background   = element_rect(fill = "#1f2937", color = NA),
+        panel.grid.major   = element_line(color = "#2d3748"),
+        panel.grid.minor   = element_blank(),
+        axis.text          = element_text(color = "#cfd8e3"),
+        axis.title         = element_text(color = "#cfd8e3", size = 11)
+      )
 
-    ggplotly(p) %>% config(displayModeBar = FALSE)
+    ggplotly(p) %>% config(displayModeBar = FALSE) %>%
+      layout(paper_bgcolor = "#1f2937", plot_bgcolor = "#1f2937",
+             font = list(color = "#cfd8e3"))
   })
 
   output$quick_stats <- renderTable({
@@ -373,34 +727,38 @@ server <- function(input, output, session) {
     p <- ggplot(
       plot_data,
       aes(
-        x = grid_pos,
-        y = finish_pos,
-        color = got_podium,
-        text = paste(
-          "Driver:", driver_full_name,
-          "<br>Team:", team,
-          "<br>Year:", year,
-          "<br>Started P", grid_pos, "-> Finished P", finish_pos,
-          "<br>Gained:", positions_gained, "positions"
+        x = grid_pos, y = finish_pos, color = got_podium,
+        text = paste0(
+          "<b>", driver_full_name, "</b>",
+          "<br>Team: ", team,
+          "<br>Year: ", year,
+          "<br>Grid P", grid_pos, " → Finish P", finish_pos,
+          "<br>Δ Positions: ", positions_gained
         )
       )
     ) +
-      geom_point(alpha = 0.5, size = 1) +
-      geom_abline(slope = 1, intercept = 0, linetype = "dashed", alpha = 0.5) +
-      scale_color_manual(
-        values = c("FALSE" = "gray60", "TRUE" = "orange"),
-        name = "",
-        labels = c("Other", "Podium")
-      ) +
-      labs(
-        x = "Starting Position",
-        y = "Finishing Position",
-        title = "Grid vs Finish Position"
-      ) +
-      theme_minimal() +
-      xlim(1, 24) + ylim(1, 24)
+      geom_point(alpha = 0.45, size = 1.2) +
+      geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "#aaa", alpha = 0.4) +
+      scale_color_manual(values = c("FALSE" = "#4b5563", "TRUE" = "#fbbf24"),
+                         name = "", labels = c("Other", "Podium")) +
+      labs(x = "Starting Position", y = "Finishing Position", title = NULL) +
+      xlim(1, 24) + ylim(1, 24) +
+      theme_minimal(base_size = 13) +
+      theme(
+        plot.background  = element_rect(fill = "#1f2937", color = NA),
+        panel.background = element_rect(fill = "#1f2937", color = NA),
+        panel.grid.major = element_line(color = "rgba(255,255,255,0.06)"),
+        panel.grid.minor = element_blank(),
+        axis.text        = element_text(color = "#cfd8e3"),
+        axis.title       = element_text(color = "#cfd8e3", size = 11),
+        legend.background = element_rect(fill = "#1f2937", color = NA),
+        legend.text       = element_text(color = "#cfd8e3")
+      )
 
-    ggplotly(p, tooltip = "text") %>% config(displayModeBar = FALSE)
+    ggplotly(p, tooltip = "text") %>% config(displayModeBar = FALSE) %>%
+      layout(paper_bgcolor = "#1f2937", plot_bgcolor = "#1f2937",
+             font = list(color = "#cfd8e3"),
+             legend = list(bgcolor = "#1f2937", font = list(color = "#9ca3af")))
   })
 
   output$comeback_plot <- renderPlot({
@@ -434,28 +792,28 @@ server <- function(input, output, session) {
 
     if (nrow(best_comebacks) == 0) {
       ggplot() +
-        annotate("text", x = 0.5, y = 0.5, label = "No significant comebacks found", size = 6) +
-        theme_void()
+        annotate("text", x = 0.5, y = 0.5, label = "No significant comebacks found",
+                 size = 6, color = "#cfd8e3") +
+        theme_void() +
+        theme(plot.background = element_rect(fill = "#1f2937", color = NA))
     } else {
       ggplot(best_comebacks, aes(x = reorder(driver_team, positions_gained), y = positions_gained)) +
-        geom_col(fill = "forestgreen", alpha = 0.8, width = 0.7) +
-        geom_text(aes(label = gain_label), hjust = -0.1, size = 3, color = "black") +
+        geom_col(fill = "#e10600", alpha = 0.9, width = 0.65) +
+        geom_text(aes(label = gain_label), hjust = -0.15, size = 3.5, color = "#9ca3af", fontface = "bold") +
         coord_flip() +
-        labs(
-          x = "Driver (Constructor)",
-          y = "Positions Gained",
-          title = "Greatest Comeback Drives"
-        ) +
-        theme_minimal() +
+        labs(x = NULL, y = "Positions Gained", title = NULL) +
+        scale_y_continuous(expand = expansion(mult = c(0, 0.18))) +
+        theme_minimal(base_size = 12) +
         theme(
-          axis.text.y = element_text(size = 9),
-          axis.text.x = element_text(size = 10),
-          axis.title = element_text(size = 11, face = "bold"),
-          plot.title = element_text(size = 12, face = "bold"),
+          plot.background  = element_rect(fill = "#1f2937", color = NA),
+          panel.background = element_rect(fill = "#1f2937", color = NA),
+          panel.grid.major.x = element_line(color = "#2d3748"),
           panel.grid.major.y = element_blank(),
-          panel.grid.minor = element_blank()
-        ) +
-        scale_y_continuous(expand = expansion(mult = c(0, 0.15)))
+          panel.grid.minor   = element_blank(),
+          axis.text.y  = element_text(size = 9.5, color = "#cfd8e3"),
+          axis.text.x  = element_text(size = 10,  color = "#cfd8e3"),
+          axis.title.x = element_text(size = 11,  color = "#9ab", face = "bold")
+        )
     }
   })
 
@@ -491,6 +849,271 @@ server <- function(input, output, session) {
     } else {
       "No major comebacks found in this selection."
     }
+  })
+
+  # ── Shared theme helper ──────────────────────────────────────────────────
+  dark_theme <- function(base = 12) {
+    theme_minimal(base_size = base) +
+      theme(
+        plot.background    = element_rect(fill = "#1f2937", color = NA),
+        panel.background   = element_rect(fill = "#1f2937", color = NA),
+        panel.grid.major   = element_line(color = "#2d3748"),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor   = element_blank(),
+        axis.text          = element_text(color = "#d1d5db", size = 9),
+        axis.title         = element_text(color = "#9ca3af", size = 10)
+      )
+  }
+  dark_layout <- function(p) {
+    p %>% config(displayModeBar = FALSE) %>%
+      layout(paper_bgcolor = "#1f2937", plot_bgcolor = "#1f2937",
+             font = list(color = "#9ca3af"))
+  }
+
+  # ── Constructor Analysis ─────────────────────────────────────────────────
+  constructor_stats <- reactive({
+    f1_data %>%
+      group_by(team) %>%
+      summarise(
+        Poles                = sum(started_pole, na.rm = TRUE),
+        `Wins from Pole`     = sum(won_from_pole, na.rm = TRUE),
+        `Conversion Rate (%)` = ifelse(Poles > 0, round(`Wins from Pole` / Poles * 100, 1), NA),
+        `Race Entries`       = n(),
+        .groups = "drop"
+      ) %>%
+      filter(Poles > 0) %>%
+      arrange(desc(Poles))
+  })
+
+  output$vbox_top_constructor <- renderValueBox({
+    top <- constructor_stats() %>% slice(1)
+    valueBox(top$team, paste0("Most Poles — ", top$Poles, " pole positions"),
+             icon = icon("industry"), color = "red")
+  })
+  output$vbox_best_team_rate <- renderValueBox({
+    best <- constructor_stats() %>% filter(Poles >= 10) %>%
+      arrange(desc(`Conversion Rate (%)`)) %>% slice(1)
+    valueBox(paste0(best$`Conversion Rate (%)`, "%"),
+             paste0("Best Conversion — ", best$team),
+             icon = icon("chart-bar"), color = "yellow")
+  })
+  output$vbox_constructor_count <- renderValueBox({
+    valueBox(nrow(constructor_stats()), "Constructors with At Least One Pole",
+             icon = icon("list"), color = "green")
+  })
+
+  output$constructor_poles_chart <- renderPlotly({
+    df <- constructor_stats() %>% head(15)
+    p <- ggplot(df, aes(x = reorder(team, Poles), y = Poles,
+           text = paste0("<b>", team, "</b><br>Poles: ", Poles,
+                         "<br>Wins from pole: ", `Wins from Pole`))) +
+      geom_col(fill = "#dc2626", alpha = 0.85, width = 0.7) +
+      coord_flip() +
+      labs(x = NULL, y = "Pole Positions") +
+      dark_theme()
+    dark_layout(ggplotly(p, tooltip = "text"))
+  })
+
+  output$constructor_rate_chart <- renderPlotly({
+    df <- constructor_stats() %>% filter(Poles >= 10) %>%
+      arrange(desc(`Conversion Rate (%)`)) %>% head(15)
+    p <- ggplot(df, aes(x = reorder(team, `Conversion Rate (%)`),
+                        y = `Conversion Rate (%)`,
+                        fill = `Conversion Rate (%)`,
+           text = paste0("<b>", team, "</b><br>Rate: ", `Conversion Rate (%)`,
+                         "%<br>Poles: ", Poles))) +
+      geom_col(width = 0.7) +
+      scale_fill_gradient(low = "#374151", high = "#dc2626", guide = "none") +
+      coord_flip() +
+      labs(x = NULL, y = "Conversion Rate (%)") +
+      dark_theme()
+    dark_layout(ggplotly(p, tooltip = "text"))
+  })
+
+  output$constructor_table <- DT::renderDataTable({
+    df <- constructor_stats() %>% rename(Constructor = team)
+    DT::datatable(df, options = list(pageLength = 10, dom = "frtip"), rownames = FALSE) %>%
+      DT::formatStyle("Conversion Rate (%)",
+        background = DT::styleColorBar(c(0, 100), "#dc2626"),
+        backgroundSize = "90% 70%", backgroundRepeat = "no-repeat",
+        backgroundPosition = "center")
+  })
+
+  # ── Circuit Breakdown ────────────────────────────────────────────────────
+  circuit_base <- reactive({
+    f1_data %>%
+      group_by(grand_prix) %>%
+      summarise(
+        Races              = sum(started_pole, na.rm = TRUE),
+        `Wins from Pole`   = sum(won_from_pole, na.rm = TRUE),
+        `Pole Win Rate (%)` = round(`Wins from Pole` / Races * 100, 1),
+        .groups = "drop"
+      ) %>%
+      filter(Races >= 10)
+  })
+
+  output$vbox_best_circuit <- renderValueBox({
+    top <- circuit_base() %>% arrange(desc(`Pole Win Rate (%)`)) %>% slice(1)
+    valueBox(paste0(top$`Pole Win Rate (%)`, "%"),
+             paste0("Highest Rate — ", top$grand_prix),
+             icon = icon("arrow-up"), color = "red")
+  })
+  output$vbox_worst_circuit <- renderValueBox({
+    bot <- circuit_base() %>% arrange(`Pole Win Rate (%)`) %>% slice(1)
+    valueBox(paste0(bot$`Pole Win Rate (%)`, "%"),
+             paste0("Lowest Rate — ", bot$grand_prix),
+             icon = icon("arrow-down"), color = "yellow")
+  })
+  output$vbox_circuit_count <- renderValueBox({
+    valueBox(n_distinct(f1_data$grand_prix), "Distinct Circuits in Dataset",
+             icon = icon("road"), color = "green")
+  })
+
+  output$circuit_chart <- renderPlotly({
+    df <- f1_data %>%
+      group_by(grand_prix) %>%
+      summarise(
+        Races              = sum(started_pole, na.rm = TRUE),
+        `Wins from Pole`   = sum(won_from_pole, na.rm = TRUE),
+        `Pole Win Rate (%)` = round(`Wins from Pole` / Races * 100, 1),
+        .groups = "drop"
+      ) %>%
+      filter(Races >= input$circuit_min_races) %>%
+      arrange(desc(`Pole Win Rate (%)`))
+    if (nrow(df) == 0) return(plotly_empty())
+    p <- ggplot(df, aes(
+          x = reorder(grand_prix, `Pole Win Rate (%)`),
+          y = `Pole Win Rate (%)`, fill = `Pole Win Rate (%)`,
+          text = paste0("<b>", grand_prix, "</b><br>Rate: ", `Pole Win Rate (%)`,
+                        "%<br>Races held: ", Races))) +
+      geom_col(width = 0.75) +
+      scale_fill_gradient(low = "#374151", high = "#dc2626", guide = "none") +
+      coord_flip() +
+      labs(x = NULL, y = "Pole-to-Win Rate (%)") +
+      dark_theme(11) +
+      theme(panel.grid.major.x = element_line(color = "#2d3748"),
+            panel.grid.major.y = element_blank())
+    dark_layout(ggplotly(p, tooltip = "text"))
+  })
+
+  # ── Driver Leaderboard ───────────────────────────────────────────────────
+  driver_stats <- reactive({
+    f1_data %>%
+      group_by(driver_full_name) %>%
+      summarise(
+        Poles                = sum(started_pole, na.rm = TRUE),
+        `Wins from Pole`     = sum(won_from_pole, na.rm = TRUE),
+        Podiums              = sum(got_podium, na.rm = TRUE),
+        `Race Entries`       = n(),
+        `Conversion Rate (%)` = ifelse(Poles > 0, round(`Wins from Pole` / Poles * 100, 1), NA),
+        .groups = "drop"
+      ) %>%
+      filter(Poles >= 3) %>%
+      arrange(desc(Poles))
+  })
+
+  output$vbox_most_poles_driver <- renderValueBox({
+    top <- driver_stats() %>% arrange(desc(Poles)) %>% slice(1)
+    valueBox(top$driver_full_name, paste0("Most Poles — ", top$Poles),
+             icon = icon("flag"), color = "red")
+  })
+  output$vbox_most_pw_driver <- renderValueBox({
+    top <- driver_stats() %>% arrange(desc(`Wins from Pole`)) %>% slice(1)
+    valueBox(top$driver_full_name, paste0("Most Wins from Pole — ", top$`Wins from Pole`),
+             icon = icon("trophy"), color = "yellow")
+  })
+  output$vbox_best_driver_rate <- renderValueBox({
+    top <- driver_stats() %>% filter(Poles >= 10) %>%
+      arrange(desc(`Conversion Rate (%)`)) %>% slice(1)
+    valueBox(paste0(top$`Conversion Rate (%)`, "%"),
+             paste0("Best Conversion (≥10 poles) — ", top$driver_full_name),
+             icon = icon("percent"), color = "green")
+  })
+
+  output$driver_scatter <- renderPlotly({
+    df <- driver_stats() %>% filter(Poles >= 5)
+    p <- ggplot(df, aes(x = Poles, y = `Wins from Pole`,
+           text = paste0("<b>", driver_full_name, "</b>",
+                         "<br>Poles: ", Poles,
+                         "<br>Wins from pole: ", `Wins from Pole`,
+                         "<br>Conversion: ", `Conversion Rate (%)`, "%"))) +
+      geom_abline(slope = 1, intercept = 0, linetype = "dashed",
+                  color = "#4b5563", alpha = 0.6) +
+      geom_point(color = "#dc2626", alpha = 0.75, size = 2.5) +
+      labs(x = "Total Pole Positions", y = "Wins from Pole") +
+      dark_theme() +
+      theme(panel.grid.major.y = element_line(color = "#2d3748"),
+            panel.grid.major.x = element_line(color = "#2d3748"))
+    dark_layout(ggplotly(p, tooltip = "text"))
+  })
+
+  output$driver_table <- DT::renderDataTable({
+    df <- driver_stats() %>% rename(Driver = driver_full_name)
+    DT::datatable(df, options = list(pageLength = 10, dom = "frtip"), rownames = FALSE) %>%
+      DT::formatStyle("Conversion Rate (%)",
+        background = DT::styleColorBar(c(0, 100), "#dc2626"),
+        backgroundSize = "90% 70%", backgroundRepeat = "no-repeat",
+        backgroundPosition = "center")
+  })
+
+  # ── Statistical Analysis ─────────────────────────────────────────────────
+  output$vbox_correlation <- renderValueBox({
+    r <- round(cor(f1_data$grid_pos, f1_data$finish_pos, use = "complete.obs"), 3)
+    valueBox(r, "Pearson r — Grid vs Finish Position",
+             icon = icon("chart-line"), color = "red")
+  })
+  output$vbox_r_squared <- renderValueBox({
+    r2 <- round(cor(f1_data$grid_pos, f1_data$finish_pos, use = "complete.obs")^2, 3)
+    valueBox(r2, "R² — Variance in Finish Explained by Grid",
+             icon = icon("chart-bar"), color = "yellow")
+  })
+  output$vbox_mean_abs_error <- renderValueBox({
+    mae <- round(mean(abs(f1_data$positions_gained), na.rm = TRUE), 2)
+    valueBox(mae, "Mean Absolute Position Change per Race",
+             icon = icon("ruler"), color = "green")
+  })
+
+  output$stats_regression_chart <- renderPlotly({
+    set.seed(42)
+    df <- f1_data %>%
+      filter(!is.na(grid_pos), !is.na(finish_pos)) %>%
+      group_by(f1_era) %>%
+      sample_n(min(500, n())) %>%
+      ungroup()
+    p <- ggplot(df, aes(x = grid_pos, y = finish_pos, color = f1_era,
+           text = paste0("Grid: P", grid_pos, " → Finish: P", finish_pos,
+                         "<br>Era: ", f1_era))) +
+      geom_point(alpha = 0.2, size = 1) +
+      geom_smooth(method = "lm", se = FALSE, linewidth = 1.3) +
+      scale_color_manual(name = "Era", values = c(
+        "Early Years (1950-1970)" = "#6b7280",
+        "Turbo Era (1971-1990)"   = "#9ca3af",
+        "Modern Era (1991-2010)"  = "#dc2626",
+        "Hybrid Era (2011+)"      = "#fbbf24"
+      )) +
+      labs(x = "Grid Position", y = "Finish Position") +
+      dark_theme() +
+      theme(
+        panel.grid.major.y = element_line(color = "#2d3748"),
+        panel.grid.major.x = element_line(color = "#2d3748"),
+        legend.background  = element_rect(fill = "#1f2937", color = NA),
+        legend.text        = element_text(color = "#9ca3af", size = 9)
+      )
+    dark_layout(ggplotly(p, tooltip = "text")) %>%
+      layout(legend = list(bgcolor = "#1f2937", font = list(color = "#9ca3af")))
+  })
+
+  output$era_correlation_table <- DT::renderDataTable({
+    df <- f1_data %>%
+      group_by(Era = f1_era) %>%
+      summarise(
+        n   = n(),
+        r   = round(cor(grid_pos, finish_pos, use = "complete.obs"), 3),
+        `R²` = round(r^2, 3),
+        .groups = "drop"
+      ) %>%
+      arrange(desc(r))
+    DT::datatable(df, options = list(dom = "t", pageLength = 10), rownames = FALSE)
   })
 }
 
