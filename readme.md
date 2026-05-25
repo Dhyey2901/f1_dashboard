@@ -119,6 +119,6 @@ Or open `app.R` in RStudio and click **Run App**.
 
 **Dhyey U Vyas**  
 Student ID: S4097968  
-RMIT University — Bachelor of Information Technology  
+RMIT University — Master of Data Science  
 
 [LinkedIn](https://www.linkedin.com/in/dhyeyuvyas/) · [GitHub](https://github.com/Dhyey2901)
