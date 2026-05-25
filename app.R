@@ -108,7 +108,8 @@ ui <- dashboardPage(
       menuItem("Constructor Analysis",     tabName = "constructor_tab",  icon = icon("industry")),
       menuItem("Circuit Breakdown",        tabName = "circuit_tab",      icon = icon("road")),
       menuItem("Driver Leaderboard",       tabName = "driver_tab",       icon = icon("user")),
-      menuItem("Statistical Analysis",     tabName = "stats_tab",        icon = icon("calculator"))
+      menuItem("Statistical Analysis",     tabName = "stats_tab",        icon = icon("calculator")),
+      menuItem("Predictive Analysis",      tabName = "predict_tab",      icon = icon("brain"))
     )
   ),
 
@@ -571,6 +572,51 @@ ui <- dashboardPage(
             DT::dataTableOutput("era_correlation_table"),
             br(),
             p(tags$strong("Note:"), " Higher r indicates grid position more strongly predicts race outcome. All values are expected to be statistically significant given the sample sizes involved.")
+          )
+        )
+      ),
+
+      # ── Tab 8: Predictive Analysis ──────────────────────────────────────────
+      tabItem(
+        tabName = "predict_tab",
+
+        fluidRow(
+          valueBoxOutput("vbox_prob_p1",    width = 4),
+          valueBoxOutput("vbox_prob_p10",   width = 4),
+          valueBoxOutput("vbox_odds_ratio", width = 4)
+        ),
+
+        fluidRow(
+          box(
+            title = "Model Specification", status = "primary", solidHeader = TRUE, width = 12,
+            p("A binary logistic regression model is fitted to predict the probability of a podium finish (P1–P3) as a function of starting grid position across all seasons (1950–2023)."),
+            p("Model form: ", tags$strong("logit( P(Podium) ) = β₀ + β₁ × Grid Position")),
+            p("A statistically significant negative coefficient β₁ confirms that starting further back on the grid systematically reduces the probability of a podium finish, controlling for no other covariates in this baseline specification.")
+          )
+        ),
+
+        fluidRow(
+          box(
+            title = "Observed Podium Rate vs Model Prediction (Grid P1–P20)",
+            status = "primary", solidHeader = TRUE, width = 8,
+            p("Grey bars show the empirically observed podium rate per grid slot. The red line is the logistic regression fit with a 95% confidence interval band."),
+            plotlyOutput("predict_curve", height = "360px")
+          ),
+          box(
+            title = "Model Diagnostics", status = "info", solidHeader = TRUE, width = 4,
+            h4("Logistic Regression Output"),
+            tableOutput("model_stats_table"),
+            br(),
+            p(tags$strong("Interpretation:"), " The odds ratio quantifies how much the odds of a podium finish change per additional grid position. A ratio below 1 confirms a negative monotonic effect of starting position on race outcome.")
+          )
+        ),
+
+        fluidRow(
+          box(
+            title = "Predicted Podium Probability by Competitive Era",
+            status = "success", solidHeader = TRUE, width = 12,
+            p("Separate logistic regression models fitted per era. Steeper curves indicate stronger grid-position dependence; flatter curves suggest more variable race outcomes regardless of qualifying result."),
+            plotlyOutput("predict_era_chart", height = "340px")
           )
         )
       )
@@ -1114,6 +1160,131 @@ server <- function(input, output, session) {
       ) %>%
       arrange(desc(r))
     DT::datatable(df, options = list(dom = "t", pageLength = 10), rownames = FALSE)
+  })
+
+  # ── Predictive Analysis — fit models once per session ────────────────────
+  model_podium <- glm(got_podium ~ grid_pos, data = f1_data, family = binomial(link = "logit"))
+
+  grid_pred_df <- local({
+    gp   <- data.frame(grid_pos = 1:24)
+    pred <- predict(model_podium, newdata = gp, type = "link", se.fit = TRUE)
+    data.frame(
+      grid_pos = 1:24,
+      prob     = plogis(pred$fit),
+      lower    = plogis(pred$fit - 1.96 * pred$se.fit),
+      upper    = plogis(pred$fit + 1.96 * pred$se.fit)
+    )
+  })
+
+  era_pred_df <- do.call(rbind, lapply(sort(unique(f1_data$f1_era)), function(e) {
+    d  <- f1_data[f1_data$f1_era == e, ]
+    m  <- glm(got_podium ~ grid_pos, data = d, family = binomial(link = "logit"))
+    gp <- data.frame(grid_pos = 1:20)
+    data.frame(grid_pos = 1:20,
+               prob = predict(m, newdata = gp, type = "response"),
+               era  = e)
+  }))
+
+  output$vbox_prob_p1 <- renderValueBox({
+    valueBox(paste0(round(grid_pred_df$prob[1] * 100, 1), "%"),
+             "Predicted P(Podium) Starting from Pole",
+             icon = icon("circle-check"), color = "red")
+  })
+  output$vbox_prob_p10 <- renderValueBox({
+    valueBox(paste0(round(grid_pred_df$prob[10] * 100, 1), "%"),
+             "Predicted P(Podium) Starting from P10",
+             icon = icon("circle-minus"), color = "yellow")
+  })
+  output$vbox_odds_ratio <- renderValueBox({
+    or  <- round(exp(coef(model_podium)["grid_pos"]), 3)
+    pct <- round((1 - or) * 100, 1)
+    valueBox(paste0("-", pct, "%"),
+             paste0("Reduction in Podium Odds per Grid Position Back (OR = ", or, ")"),
+             icon = icon("arrow-trend-down"), color = "green")
+  })
+
+  output$predict_curve <- renderPlotly({
+    obs <- f1_data %>%
+      filter(grid_pos <= 20) %>%
+      group_by(grid_pos) %>%
+      summarise(obs_rate = mean(got_podium, na.rm = TRUE), n = n(), .groups = "drop")
+
+    df <- merge(obs, grid_pred_df[grid_pred_df$grid_pos <= 20, ], by = "grid_pos") %>%
+      mutate(
+        tip_bar  = paste0("Grid P", grid_pos, "<br>Observed: ",
+                          round(obs_rate * 100, 1), "%<br>n = ", n),
+        tip_line = paste0("Grid P", grid_pos, "<br>Predicted: ",
+                          round(prob * 100, 1), "%<br>95% CI: [",
+                          round(lower * 100, 1), "%, ", round(upper * 100, 1), "%]")
+      )
+
+    p <- ggplot(df) +
+      geom_ribbon(aes(x = grid_pos, ymin = lower, ymax = upper),
+                  fill = "#dc2626", alpha = 0.15) +
+      geom_col(aes(x = grid_pos, y = obs_rate, text = tip_bar),
+               fill = "#374151", alpha = 0.85, width = 0.65) +
+      geom_line(aes(x = grid_pos, y = prob, text = tip_line),
+                color = "#dc2626", linewidth = 1.4) +
+      geom_point(aes(x = grid_pos, y = prob, text = tip_line),
+                 color = "#dc2626", size = 2.2) +
+      scale_y_continuous(labels = function(x) paste0(round(x * 100), "%"),
+                         limits = c(0, NA), expand = expansion(mult = c(0, 0.05))) +
+      scale_x_continuous(breaks = seq(2, 20, 2)) +
+      labs(x = "Starting Grid Position", y = "P(Podium Finish)") +
+      dark_theme() +
+      theme(panel.grid.major.x = element_line(color = "#2d3748"),
+            panel.grid.major.y = element_line(color = "#2d3748"))
+
+    dark_layout(ggplotly(p, tooltip = "text"))
+  })
+
+  output$model_stats_table <- renderTable({
+    ms  <- summary(model_podium)$coefficients
+    ci  <- confint.default(model_podium)
+    null_ll  <- as.numeric(logLik(glm(got_podium ~ 1, data = f1_data, family = binomial)))
+    model_ll <- as.numeric(logLik(model_podium))
+
+    data.frame(
+      Metric = c("Intercept (β₀)", "Grid Position (β₁)", "Odds Ratio (exp β₁)",
+                 "OR 95% CI", "p-value", "McFadden R²", "Observations"),
+      Value  = c(
+        round(ms["(Intercept)", "Estimate"], 3),
+        round(ms["grid_pos", "Estimate"], 4),
+        round(exp(ms["grid_pos", "Estimate"]), 4),
+        paste0("[", round(exp(ci["grid_pos", 1]), 4), ", ",
+               round(exp(ci["grid_pos", 2]), 4), "]"),
+        format(ms["grid_pos", "Pr(>|z|)"], scientific = TRUE, digits = 2),
+        round(1 - model_ll / null_ll, 4),
+        format(nrow(f1_data), big.mark = ",")
+      )
+    )
+  }, bordered = TRUE, striped = FALSE)
+
+  output$predict_era_chart <- renderPlotly({
+    era_colors <- c(
+      "Early Years (1950-1970)" = "#6b7280",
+      "Turbo Era (1971-1990)"   = "#9ca3af",
+      "Modern Era (1991-2010)"  = "#dc2626",
+      "Hybrid Era (2011+)"      = "#fbbf24"
+    )
+    p <- ggplot(era_pred_df,
+                aes(x = grid_pos, y = prob, color = era,
+                    text = paste0("Era: ", era, "<br>Grid P", grid_pos,
+                                  "<br>P(Podium): ", round(prob * 100, 1), "%"))) +
+      geom_line(linewidth = 1.3) +
+      geom_point(size = 1.8, alpha = 0.85) +
+      scale_color_manual(values = era_colors, name = "Era") +
+      scale_y_continuous(labels = function(x) paste0(round(x * 100), "%")) +
+      scale_x_continuous(breaks = seq(2, 20, 2)) +
+      labs(x = "Starting Grid Position", y = "P(Podium Finish)") +
+      dark_theme() +
+      theme(panel.grid.major.x = element_line(color = "#2d3748"),
+            panel.grid.major.y = element_line(color = "#2d3748"),
+            legend.background  = element_rect(fill = "#1f2937", color = NA),
+            legend.text        = element_text(color = "#9ca3af", size = 9))
+
+    dark_layout(ggplotly(p, tooltip = "text")) %>%
+      layout(legend = list(bgcolor = "#1f2937", font = list(color = "#9ca3af")))
   })
 }
 

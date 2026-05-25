@@ -1,6 +1,6 @@
 # F1 Starting Grid Analysis Dashboard
 
-An interactive analytical dashboard built with **R Shiny** examining the relationship between qualifying grid position and race outcome across 70+ years of Formula 1 (1950–2023).
+An interactive analytical dashboard built with **R Shiny** examining the relationship between qualifying grid position and race outcome across 70+ years of Formula 1 (1950–2023). The project combines exploratory data analysis, multi-dimensional visualisation, and a binary logistic regression model to predict podium probability from grid position.
 
 Submitted as part of **Data Visualisation — Assignment 3**, RMIT University.
 
@@ -18,6 +18,7 @@ This dashboard investigates whether starting grid position is a reliable predict
 2. How does grid position correlate with final race classification across different eras?
 3. Which circuits, constructors, and drivers show the greatest and least dependence on qualifying position?
 4. What does a formal regression analysis reveal about the predictive power of grid position?
+5. Can a logistic regression model reliably predict the probability of a podium finish from grid position alone?
 
 ---
 
@@ -32,6 +33,7 @@ This dashboard investigates whether starting grid position is a reliable predict
 | **Circuit Breakdown** | Pole win rate per circuit, ranked and colour-coded; adjustable minimum race threshold |
 | **Driver Leaderboard** | Driver-level pole count, win conversion, and a poles vs wins scatter revealing qualification efficiency |
 | **Statistical Analysis** | Pearson correlation, R², mean absolute position change, and OLS regression lines stratified by competitive era |
+| **Predictive Analysis** | Binary logistic regression model predicting P(podium) from grid position — outputs odds ratio, McFadden R², 95% CI, and per-era probability curves |
 
 ---
 
@@ -112,6 +114,7 @@ Or open `app.R` in RStudio and click **Run App**.
 - Pearson correlation between grid position and finishing position is moderate-to-strong (r ≈ 0.5–0.6), confirming qualifying as a meaningful but imperfect predictor.
 - Street circuits (e.g., Monaco) consistently show pole win rates above 60%, while high-degradation circuits show much lower rates.
 - A small number of drivers and constructors convert poles at well above the dataset average, suggesting systematic performance advantages beyond raw qualifying pace.
+- A logistic regression model confirms a statistically significant negative effect of grid position on podium probability (p < 0.001). The odds of a podium finish decrease by approximately 15–18% per additional grid position back, with the steepest drop occurring between P1 and P5.
 
 ---
 
